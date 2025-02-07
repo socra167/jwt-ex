@@ -73,8 +73,11 @@ public class AuthTokenServiceTest {
 		boolean isValid = Ut.Jwt.isValidToken(secretKey, accessToken);
 		assertThat(isValid).isTrue();
 
-		Map<String, Object> parsedPayload = Ut.Jwt.getPayload(secretKey, accessToken);
+		// Map<String, Object> parsedPayload = Ut.Jwt.getPayload(secretKey, accessToken);
+		Map<String, Object> parsedPayload = authTokenService.getPayload(secretKey, accessToken);
 
+		// JSON은 Long을 표현할 수 없다. -> JSON은 Long을 double로 표현한다.
+		// 직렬화 -> 역직렬화 과정에서 Long 타입을 잃어버리고, double로 되었다가 기본 int로 돌아온 것
 		assertThat(parsedPayload).containsAllEntriesOf(
 			Map.of("id", member.getId(), "username", member.getUsername())
 		);
