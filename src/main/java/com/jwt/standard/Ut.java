@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 
 public class Ut {
 	public static class Json {
@@ -31,8 +30,10 @@ public class Ut {
 
 			// JWT를 생성(공식문서 참고)
 			return Jwts.builder()
-				.setExpiration(expiration)
-				.signWith(secretKey, SignatureAlgorithm.HS256)
+				.claims(claims)
+				.issuedAt(issuedAt)
+				.expiration(expiration)
+				.signWith(secretKey)
 				.compact();
 		}
 	}
