@@ -4,6 +4,8 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 
+import javax.crypto.SecretKey;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -35,6 +37,19 @@ public class Ut {
 				.expiration(expiration)
 				.signWith(secretKey)
 				.compact();
+		}
+
+		public static boolean isValidToken(SecretKey secretKey, String token) {
+			try {
+				Jwts
+					.parser()
+					.verifyWith(secretKey)
+					.build()
+					.parse(token);
+			} catch (Exception e) {
+				return false;
+			}
+			return true;
 		}
 	}
 }
