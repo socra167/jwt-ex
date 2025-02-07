@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jwt.domain.member.member.entity.Member;
 import com.jwt.standard.Ut;
 
 import io.jsonwebtoken.security.Keys;
@@ -22,6 +23,8 @@ import io.jsonwebtoken.security.Keys;
 public class AuthTokenServiceTest {
 	@Autowired
 	private AuthTokenService authTokenService;
+	@Autowired
+	private MemberService memberService;
 
 	@Test
 	@DisplayName("AuthTokenService 생성")
@@ -42,5 +45,17 @@ public class AuthTokenServiceTest {
 
 		assertThat(jwt).isNotBlank();
 		System.out.println("jwt = " + jwt);
+	}
+
+
+	@Test
+	@DisplayName("Access Token 생성")
+	void accessToken() {
+		// Access Token이라고 불리는 JWT (뭔가를 접근하기 위한 토큰, 인증 정보를 담고 있는 토큰)
+		Member member = memberService.findByUsername("user1").get();
+		String accessToken = authTokenService.genAccessToken(member);
+
+		assertThat(accessToken).isNotBlank();
+		System.out.println("accessToken = " + accessToken);
 	}
 }

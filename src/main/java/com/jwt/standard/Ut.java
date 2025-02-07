@@ -31,8 +31,6 @@ public class Ut {
 
 			// JWT를 생성(공식문서 참고)
 			return Jwts.builder()
-				.setClaims(claims)
-				.setIssuedAt(issuedAt)
 				.setExpiration(expiration)
 				.signWith(secretKey, SignatureAlgorithm.HS256)
 				.compact();
