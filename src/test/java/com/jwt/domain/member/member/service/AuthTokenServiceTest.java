@@ -3,7 +3,7 @@ package com.jwt.domain.member.member.service;
 import static org.assertj.core.api.Assertions.*;
 
 import java.security.Key;
-import java.util.Date;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,9 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.jwt.standard.Ut;
+
 import io.jsonwebtoken.security.Keys;
 
 @SpringBootTest
@@ -39,21 +38,8 @@ public class AuthTokenServiceTest {
 		// 토큰 시크릿 키
 		Key secretKey = Keys.hmacShaKeyFor("abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz1234567890".getBytes());
 
-		// 정보
-		Claims claims = Jwts.claims()
-			.add("name", "Paul")
-			.add("age", 23)
-			.build();
-		Date issuedAt = new Date();
-		Date expiration = new Date(issuedAt.getTime() + 1000L * expireSeconds);
+		String jwt = Ut.Jwt.createToken(secretKey, expireSeconds, Map.of("name", "john", "age", 23 ));
 
-		// JWT를 생성(공식문서 참고)
-		String jwt = Jwts.builder()
-			.setClaims(claims)
-			.setIssuedAt(issuedAt)
-			.setExpiration(expiration)
-			.signWith(secretKey, SignatureAlgorithm.HS256)
-			.compact();
 		assertThat(jwt).isNotBlank();
 		System.out.println("jwt = " + jwt);
 	}
