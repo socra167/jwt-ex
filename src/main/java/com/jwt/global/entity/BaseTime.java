@@ -15,11 +15,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @MappedSuperclass
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class BaseTime extends BaseEntity {
     @CreatedDate

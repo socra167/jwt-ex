@@ -4,17 +4,20 @@ import com.jwt.domain.member.member.entity.Member;
 import com.jwt.domain.post.post.entity.Post;
 import com.jwt.global.entity.BaseTime;
 import com.jwt.global.exception.ServiceException;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-@Builder
+@SuperBuilder
 public class Comment extends BaseTime {
 
     @ManyToOne(fetch = FetchType.LAZY)
