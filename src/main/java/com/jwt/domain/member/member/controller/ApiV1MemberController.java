@@ -46,7 +46,7 @@ public class ApiV1MemberController {
 	record LoginReqBody(@NotBlank String username, @NotBlank String password) {
 	}
 
-	record LoginResBody(MemberDto item, String apiKey) {
+	record LoginResBody(MemberDto item, String apiKey, String accessToken ) {
 	}
 
 	@PostMapping("/login")
@@ -58,12 +58,19 @@ public class ApiV1MemberController {
 			throw new ServiceException("401-2", "비밀번호가 일치하지 않습니다.");
 		}
 
+		// authTokenService.genAccessToken(member);
+		// 이렇게 사용하지 않고, MemberService에서 사용하도록 하고 싶다.
+		// 디폴트 접근 제어자 protected로 설정한다.
+
+		String authToken = memberService.getAuthToken(member);
+
 		return new RsData<>(
 			"200-1",
 			"%s님 환영합니다.".formatted(member.getNickname()),
 			new LoginResBody(
 				new MemberDto(member),
-				member.getApiKey()
+				member.getApiKey(),
+				authToken
 			)
 		);
 	}

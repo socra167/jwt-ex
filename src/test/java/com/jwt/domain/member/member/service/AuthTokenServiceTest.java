@@ -56,7 +56,7 @@ public class AuthTokenServiceTest {
 	void accessToken() {
 		// Access Token이라고 불리는 JWT (뭔가를 접근하기 위한 토큰, 인증 정보를 담고 있는 토큰)
 		Member member = memberService.findByUsername("user1").get();
-		String accessToken = authTokenService.genAccessToken(member);
+		String accessToken = authTokenService.genAccessToken(member); // 테스트 패키지 구조를 동일하게 가져가면 protected 메서드 사용 가능
 
 		assertThat(accessToken).isNotBlank();
 		System.out.println("accessToken = " + accessToken);

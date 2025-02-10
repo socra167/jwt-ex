@@ -138,7 +138,8 @@ class Ap1V1MemberControllerTest {
 				.andExpect(jsonPath("$.data.item.nickname").value(member.getNickname()))
 				.andExpect(jsonPath("$.data.item.createdDate").value(matchesPattern(member.getCreatedDate().toString().replaceAll("0+$", "") + ".*")))
 				.andExpect(jsonPath("$.data.item.modifiedDate").value(matchesPattern(member.getCreatedDate().toString().replaceAll("0+$", "") + ".*")))
-				.andExpect(jsonPath("$.data.apiKey").value(member.getApiKey()));
+				.andExpect(jsonPath("$.data.apiKey").value(member.getApiKey()))
+				.andExpect(jsonPath("$.data.accessToken").exists());
 		}
 
 		@Test
