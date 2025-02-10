@@ -1,5 +1,6 @@
 package com.jwt.domain.member.member.service;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -48,5 +49,12 @@ public class MemberService {
         // 인증을 위한 토큰은 액세스 토큰으로 쓰다가, API key로 바꿀 수도 있다.
         // 인증 방식이 바뀌어도 유연하게 사용 가능하도록 추상적인 메서드명으로 설정
         return authTokenService.genAccessToken(member);
+    }
+
+    public Optional<Member> getMemberByAccessToken(String accessToken) {
+        Map<String, Object> payload = authTokenService.getPayload(accessToken);
+        long id = (long) payload.get("id");
+
+        return memberRepository.findById(id);
     }
 }
