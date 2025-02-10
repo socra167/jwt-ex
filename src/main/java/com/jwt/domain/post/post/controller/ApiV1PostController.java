@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jwt.domain.member.member.entity.Member;
-import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.domain.post.post.dto.PageDto;
 import com.jwt.domain.post.post.dto.PostWithContnetDto;
 import com.jwt.domain.post.post.entity.Post;
