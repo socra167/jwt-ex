@@ -267,7 +267,7 @@ class ApiV1PostControllerTest {
 
 		@Test
 		@DisplayName("성공 - 글을 작성할 수 있다")
-		// @WithUserDetails("user2") // UserDetailsService 인터페이스를 구현해 시큐리티는 우리가 구현한 Member의 user를 인식할 수 있다
+			// @WithUserDetails("user2") // UserDetailsService 인터페이스를 구현해 시큐리티는 우리가 구현한 Member의 user를 인식할 수 있다
 		void writeA() throws Exception {
 			var title = "새로운 글 제목";
 			var content = "새로운 글 내용";
@@ -462,5 +462,21 @@ class ApiV1PostControllerTest {
 				.andExpect(jsonPath("$.code").value("403-1"))
 				.andExpect(jsonPath("$.msg").value("자신이 작성한 글만 삭제 가능합니다."));
 		}
+	}
+
+	@Test
+	@DisplayName("통계")
+	void statistics() throws Exception {
+		ResultActions resultActions = mvc.perform(
+				get("/api/v1/posts/statistics")
+			)
+			.andDo(print());
+
+		resultActions
+			.andExpect(status().isOk())
+			.andExpect(handler().handlerType(ApiV1PostController.class))
+			.andExpect(handler().methodName("getStatistics"))
+			.andExpect(jsonPath("$.code").value("200-1"))
+			.andExpect(jsonPath("$.msg").value("통계 조회가 완료되었습니다."));
 	}
 }

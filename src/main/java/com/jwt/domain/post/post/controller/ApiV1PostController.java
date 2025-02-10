@@ -134,4 +134,20 @@ public class ApiV1PostController {
 			new PageDto(postPage)
 		);
 	}
+
+	record StatisticsResBody(long postCount, long postPublishedCount, long postListedCount) {
+	}
+
+	@GetMapping("/statistics")
+	public RsData<StatisticsResBody> getStatistics() {
+		return new RsData<>(
+			"200-1",
+			"통계 조회가 완료되었습니다.",
+			new StatisticsResBody(
+				10,
+				10,
+				10
+			)
+		);
+	}
 }
