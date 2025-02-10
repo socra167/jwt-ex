@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
@@ -14,6 +13,7 @@ import org.springframework.web.context.annotation.RequestScope;
 import com.jwt.domain.member.member.entity.Member;
 import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.global.exception.ServiceException;
+import com.jwt.global.security.SecurityUser;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +41,10 @@ public class Rq {
 
 	}
 
-	public void setLogin(String username) {
+	public void setLogin(Member actor) {
 		// Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); // 인증 정보 저장소
 		// security는 인증된 사람이 여기 들어 있다고 생각하고 사용한다
-		UserDetails user = new User(username, "", List.of());
+		UserDetails user = new SecurityUser(actor.getId(), actor.getUsername(), "", List.of());
 
 		// 인증 정보를 수동으로 등록
 		SecurityContextHolder.getContext().setAuthentication(
@@ -59,12 +59,16 @@ public class Rq {
 			throw new ServiceException("401-2", "로그인이 필요합니다.");
 		}
 
-		UserDetails user = (UserDetails)authentication.getPrincipal();
-		if (user == null) {
-			throw new ServiceException("401-3", "로그인이 필요합니다.");
+		Object principal = authentication.getPrincipal();
+		if (!(principal instanceof SecurityUser)) {
+			throw new ServiceException("401-3", "잘못된 인증 정보입니다.");
 		}
 
-		String username = user.getUsername();
-		return memberService.findByUsername(username).get();
+		SecurityUser user = (SecurityUser) principal;
+
+		return Member.builder()
+			.id(user.getId())
+			.username(user.getUsername())
+			.build();
 	}
 }
