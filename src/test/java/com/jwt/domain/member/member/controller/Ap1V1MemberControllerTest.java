@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,15 @@ class Ap1V1MemberControllerTest {
 
 	@Autowired
 	private MemberService memberService;
+
+	private Member loginMember;
+	private String token;
+
+	@BeforeEach
+	void setUp() {
+		loginMember = memberService.findByUsername("user1").get();
+		token = memberService.getAuthToken(loginMember);
+	}
 
 	@Nested
 	@DisplayName("회원 가입")
@@ -227,9 +237,6 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("성공 - 내 정보를 조회할 수 있다")
 		void meA() throws Exception {
-			// String apiKey = "user1";
-			// ResultActions resultActions = meRequest(token);
-			String token = "eyJhbGciOiJIUzUxMiJ9.eyJpZCI6MywidXNlcm5hbWUiOiJ1c2VyMSIsImlhdCI6MTczOTE1NDgxMCwiZXhwIjoxNzcwNjkwODEwfQ.beGeXX5LpK3cervVouA_5AMx6YfcfpU7umrZ7xkCrsDzdeUJUiW4h8nd8jJe7WXFSs7ZpFuS7zEalKr4gnB6YQ";
 			ResultActions resultActions = meRequest(token);
 
 			// Member member = memberService.findByApiKey(token).get();
@@ -246,8 +253,8 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 잘못된 API key로 내 정보 조회를 하면 실패한다")
 		void meB() throws Exception {
-			String apiKey = "";
-			ResultActions resultActions = meRequest(apiKey);
+			String wrong_token = "";
+			ResultActions resultActions = meRequest(wrong_token);
 
 			resultActions
 				.andExpect(status().isUnauthorized())
@@ -255,11 +262,11 @@ class Ap1V1MemberControllerTest {
 				.andExpect(jsonPath("$.msg").value("잘못된 인증키입니다."));
 		}
 
-		private ResultActions meRequest(String apiKey) throws Exception {
+		private ResultActions meRequest(String token) throws Exception {
 			ResultActions resultActions = mvc
 				.perform(
 					get("/api/v1/members/me")
-						.header("Authorization", "Bearer %s".formatted(apiKey))
+						.header("Authorization", "Bearer %s".formatted(token))
 				)
 				.andDo(print());
 			return resultActions;

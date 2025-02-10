@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jwt.domain.member.member.entity.Member;
+import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.domain.post.post.service.PostService;
 
 @Transactional
@@ -26,19 +29,31 @@ import com.jwt.domain.post.post.service.PostService;
 class ApiV1CommentControllerTest {
 	@Autowired
 	private MockMvc mvc;
+
 	@Autowired
 	private PostService postService;
+
+	@Autowired
+	private MemberService memberService;
+
+	private Member loginMember;
+	private String token;
+
+	@BeforeEach
+	void setUp() {
+		loginMember = memberService.findByUsername("user1").get();
+		token = memberService.getAuthToken(loginMember);
+	}
 
 	@Test
 	@DisplayName("댓글을 작성할 수 있다")
 	void write() throws Exception {
-		var apiKey = "user1";
 		var content = "댓글의 내용입니다.";
 		var postId = 1L;
 		var resultActions = mvc
 			.perform(
 				post("/api/v1/posts/%d/comments".formatted(postId))
-					.header("Authorization", "Bearer " + apiKey)
+					.header("Authorization", "Bearer " + token)
 					.content("""
 						{
 							"content" : "%s"
@@ -61,14 +76,13 @@ class ApiV1CommentControllerTest {
 	@Test
 	@DisplayName("댓글을 수정할 수 있다")
 	void modify() throws Exception {
-		var apiKey = "user1";
 		var content = "수정된 댓글 내용";
 		var postId = 1L;
 		var commentId = 1L;
 		var resultActions = mvc
 			.perform(
 				put("/api/v1/posts/%d/comments/%d".formatted(postId, commentId))
-					.header("Authorization", "Bearer " + apiKey)
+					.header("Authorization", "Bearer " + token)
 					.content("""
 						{
 							"content" : "%s"
@@ -92,13 +106,12 @@ class ApiV1CommentControllerTest {
 	@Test
 	@DisplayName("댓글을 삭제할 수 있다")
 	void delete() throws Exception {
-		var apiKey = "user1";
 		var postId = 1L;
 		var commentId = 1L;
 		var resultActions = mvc
 			.perform(
 				MockMvcRequestBuilders.delete("/api/v1/posts/%d/comments/%d".formatted(postId, commentId))
-					.header("Authorization", "Bearer " + apiKey)
+					.header("Authorization", "Bearer " + token)
 			)
 			.andDo(print());
 

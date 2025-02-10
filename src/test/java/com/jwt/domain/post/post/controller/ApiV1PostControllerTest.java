@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,12 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jwt.domain.member.member.entity.Member;
+import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.domain.post.post.entity.Post;
 import com.jwt.domain.post.post.service.PostService;
 
@@ -34,6 +36,19 @@ class ApiV1PostControllerTest {
 
 	@Autowired
 	private PostService postService;
+
+	@Autowired
+	private MemberService memberService;
+
+	private Member loginMember;
+
+	private String token;
+
+	@BeforeEach
+	void setUp() {
+		loginMember = memberService.findByUsername("user2").get();
+		token = memberService.getAuthToken(loginMember);
+	}
 
 	@Nested
 	@DisplayName("글 목록 조회")
@@ -144,7 +159,6 @@ class ApiV1PostControllerTest {
 		@Test
 		@DisplayName("성공 - 내가 작성한 글 목록을 조회할 수 있으며 결과는 페이징되어야 한다")
 		void itemsD_myPosts() throws Exception {
-			var apiKey = "user2"; // user1이 작성한 글 조회
 			var page = 1;
 			var pageSize = 3;
 			var keywordType = "content";
@@ -153,7 +167,7 @@ class ApiV1PostControllerTest {
 				.perform(
 					get("/api/v1/posts/mine?page=%d&pageSize=%d&keywordType=%s&keyword=%s"
 						.formatted(page, pageSize, keywordType, keyword))
-						.header("Authorization", "Bearer " + apiKey)
+						.header("Authorization", "Bearer " + token)
 				)
 				.andDo(print());
 
@@ -210,9 +224,8 @@ class ApiV1PostControllerTest {
 		@Test
 		@DisplayName("실패 - 다른 유저의 비공개 글을 조회하면 실패한다")
 		void itemC() throws Exception {
-			var apiKey = "user2";
 			var postId = 1L;
-			var resultActions = itemRequest(apiKey, postId);
+			var resultActions = itemRequest(token, postId);
 
 			resultActions
 				.andExpect(status().isForbidden())
@@ -256,10 +269,9 @@ class ApiV1PostControllerTest {
 		@DisplayName("성공 - 글을 작성할 수 있다")
 		// @WithUserDetails("user2") // UserDetailsService 인터페이스를 구현해 시큐리티는 우리가 구현한 Member의 user를 인식할 수 있다
 		void writeA() throws Exception {
-			var apiKey = "user3";
 			var title = "새로운 글 제목";
 			var content = "새로운 글 내용";
-			var resultActions = writeRequest(apiKey, title, content);
+			var resultActions = writeRequest(token, title, content);
 			var post = postService.getLatestItem().get();
 
 			resultActions
@@ -269,11 +281,11 @@ class ApiV1PostControllerTest {
 			checkPost(resultActions, post);
 		}
 
-		private ResultActions writeRequest(String apiKey, String title, String content) throws Exception {
+		private ResultActions writeRequest(String token, String title, String content) throws Exception {
 			return mvc
 				.perform(
 					post("/api/v1/posts")
-						.header("Authorization", "Bearer %s".formatted(apiKey))
+						.header("Authorization", "Bearer %s".formatted(token))
 						.content("""
 							{
 								"title" : "%s",
@@ -290,10 +302,10 @@ class ApiV1PostControllerTest {
 		@Test
 		@DisplayName("실패 - 잘못된 API key로 글을 작성하면 실패한다")
 		void writeB() throws Exception {
-			var apiKey = "";
+			var wrong_token = "";
 			var title = "새로운 글 제목";
 			var content = "새로운 글 내용";
-			var resultActions = writeRequest(apiKey, title, content);
+			var resultActions = writeRequest(wrong_token, title, content);
 
 			resultActions
 				.andExpect(status().isUnauthorized())
@@ -304,10 +316,9 @@ class ApiV1PostControllerTest {
 		@Test
 		@DisplayName("실패 - 입력 데이터가 누락되면 글 작성에 실패한다")
 		void writeC() throws Exception {
-			var apiKey = "user1";
 			var title = "";
 			var content = "";
-			var resultActions = writeRequest(apiKey, title, content);
+			var resultActions = writeRequest(token, title, content);
 
 			resultActions
 				.andExpect(status().isBadRequest())
@@ -328,11 +339,10 @@ class ApiV1PostControllerTest {
 		@Test
 		@DisplayName("성공 - 글을 수정할 수 있다")
 		void modifyA() throws Exception {
-			var postId = 1L;
-			var apiKey = "user1";
+			var postId = 3L;
 			var title = "수정된 글 제목";
 			var content = "수정된 글 내용";
-			var resultActions = modifyRequest(postId, apiKey, title, content);
+			var resultActions = modifyRequest(postId, token, title, content);
 
 			resultActions
 				.andExpect(status().isOk())
@@ -344,11 +354,11 @@ class ApiV1PostControllerTest {
 			checkPost(resultActions, post);
 		}
 
-		private ResultActions modifyRequest(Long postId, String apiKey, String title, String content) throws Exception {
+		private ResultActions modifyRequest(Long postId, String token, String title, String content) throws Exception {
 			return mvc
 				.perform(
 					put("/api/v1/posts/%d".formatted(postId))
-						.header("Authorization", "Bearer %s".formatted(apiKey))
+						.header("Authorization", "Bearer %s".formatted(token))
 						.content("""
 							{
 								"title" : "%s",
@@ -364,10 +374,10 @@ class ApiV1PostControllerTest {
 		@DisplayName("실패 - 잘못된 API key로 글을 수정하면 실패한다")
 		void modifyB() throws Exception {
 			var postId = 1L;
-			var apiKey = "wrong_api_key";
+			var token = "wrong_api_key";
 			var title = "수정된 글 제목";
 			var content = "수정된 글 내용";
-			var resultActions = modifyRequest(postId, apiKey, title, content);
+			var resultActions = modifyRequest(postId, token, title, content);
 
 			resultActions
 				.andExpect(status().isUnauthorized())
@@ -379,10 +389,9 @@ class ApiV1PostControllerTest {
 		@DisplayName("실패 - 입력 데이터가 누락되면 글 수정에 실패한다")
 		void modifyC() throws Exception {
 			var postId = 1L;
-			var apiKey = "user1";
 			var title = "";
 			var content = "";
-			var resultActions = modifyRequest(postId, apiKey, title, content);
+			var resultActions = modifyRequest(postId, token, title, content);
 
 			resultActions
 				.andExpect(status().isBadRequest())
@@ -399,10 +408,9 @@ class ApiV1PostControllerTest {
 		@DisplayName("실패 - 자신이 작성하지 않은 글을 수정할 수 없다")
 		void modifyD() throws Exception {
 			var postId = 1L;
-			var apiKey = "user2";
 			var title = "다른 유저의 글 제목 수정";
 			var content = "다른 유저의 글 내용 수정";
-			var resultActions = modifyRequest(postId, apiKey, title, content);
+			var resultActions = modifyRequest(postId, token, title, content);
 
 			resultActions
 				.andExpect(status().isForbidden())
@@ -420,9 +428,8 @@ class ApiV1PostControllerTest {
 		@Test
 		@DisplayName("성공 - 글을 삭제할 수 있다")
 		void deleteA() throws Exception {
-			var postId = 2L;
-			var apiKey = "user1";
-			var resultActions = deleteRequest(postId, apiKey);
+			var postId = 3L;
+			var resultActions = deleteRequest(postId, token);
 
 			resultActions
 				.andExpect(status().isOk())
@@ -436,7 +443,7 @@ class ApiV1PostControllerTest {
 			return mvc
 				.perform(
 					delete("/api/v1/posts/%d".formatted(postId))
-						.header("Authorization", "Bearer %s".formatted(apiKey))
+						.header("Authorization", "Bearer %s".formatted(token))
 				)
 				.andDo(print());
 		}
@@ -445,8 +452,8 @@ class ApiV1PostControllerTest {
 		@DisplayName("실패 - 자신이 작성하지 않은 글을 삭제할 수 없다")
 		void deleteB() throws Exception {
 			var postId = 1L;
-			var apiKey = "user2";
-			var resultActions = deleteRequest(postId, apiKey);
+			var token = "user2";
+			var resultActions = deleteRequest(postId, token);
 
 			resultActions
 				.andExpect(status().isForbidden())

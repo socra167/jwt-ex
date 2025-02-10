@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jwt.domain.member.member.entity.Member;
+import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.domain.post.comment.dto.CommentDto;
 import com.jwt.domain.post.comment.entity.Comment;
 import com.jwt.domain.post.post.entity.Post;
@@ -32,6 +33,7 @@ public class ApiV1CommentController {
 	private final PostService postService;
 	private final Rq rq;
 	private final EntityManager em;
+	private final MemberService memberService;
 
 	@GetMapping
 	@Transactional(readOnly = true) // 조회만 하는 메서드라면 readOnly를 적용하는게 낫다
@@ -85,7 +87,7 @@ public class ApiV1CommentController {
 	@PostMapping
 	@Transactional // DB 반영을 위한 Transactional
 	public RsData<Void> write(@PathVariable long postId, @RequestBody WriteReqBody reqBody) {
-		Member actor = rq.getAuthenticatedActor();
+		Member actor = rq.getActor();
 		Comment comment = _write(postId, actor, reqBody.content());
 
 		postService.flush();
@@ -104,7 +106,7 @@ public class ApiV1CommentController {
 	@Transactional
 	public RsData<Void> modify(@PathVariable long postId, @PathVariable long id, @RequestBody ModifyReqBody reqBody) {
 
-		Member actor = rq.getAuthenticatedActor();
+		Member actor = rq.getActor();
 
 		Post post = postService.getItem(postId).orElseThrow(
 			() -> new ServiceException("404-1", "존재하지 않는 게시글입니다.")
@@ -126,7 +128,7 @@ public class ApiV1CommentController {
 	@Transactional
 	public RsData<Void> delete(@PathVariable long postId, @PathVariable long id) {
 
-		Member actor = rq.getAuthenticatedActor();
+		Member actor = rq.getActor();
 		Post post = postService.getItem(postId).orElseThrow(
 			() -> new ServiceException("404-1", "존재하지 않는 게시글입니다.")
 		);

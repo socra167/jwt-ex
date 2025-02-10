@@ -26,6 +26,8 @@ public class AuthTokenService {
 	}
 
 	Map<String, Object> getPayload(String token) {
+		if (!Ut.Jwt.isValidToken(keyString, token)) return null;
+
 		Map<String, Object> payload = Ut.Jwt.getPayload(keyString, token);
 
 		if(payload == null) return null;
