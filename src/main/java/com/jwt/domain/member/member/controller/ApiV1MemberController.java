@@ -64,6 +64,11 @@ public class ApiV1MemberController {
 
 		String accessToken = memberService.getAuthToken(member);
 		Cookie accessTokenCookie = new Cookie("accessToken", accessToken); // 응답 헤더에 추가할 쿠키
+		accessTokenCookie.setDomain("localhost"); // 쿠키가 사용될 수 있는 도메인
+		accessTokenCookie.setPath("/"); // 쿠키가 사이트에서 사용될 수 있는 엔드포인트
+		accessTokenCookie.setHttpOnly(true); // 쿠키를 스크립트에서 접근할 수 없도록 함
+		accessTokenCookie.setSecure(true); // HTTPS 상에서만 전달되도록 함
+		accessTokenCookie.setAttribute("SameStie", "Strict"); // 도메인이 달라지면 쿠키를 보내지 않음
 		response.addCookie(accessTokenCookie); // 응답에 쿠키를 추가
 
 		// authTokenService.genAccessToken(member);
