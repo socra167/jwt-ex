@@ -24,17 +24,9 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter { // 필터
 	private final MemberService memberService;
 
 	private boolean isAuthorizationHeader(HttpServletRequest request) {
-		String authorizationHeader = request.getHeader("Authorization");
-
-		if (authorizationHeader == null) {
-			return false;
-		}
-
-		if (!authorizationHeader.startsWith("Bearer ")) {
-			return false;
-		}
-
-		return true;
+		return Optional.ofNullable(request.getHeader("Authorization"))
+			.filter(s -> s.startsWith("Bearer "))
+			.isPresent();
 	}
 
 	@Override
