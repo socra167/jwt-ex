@@ -46,14 +46,28 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter { // 필터
 		String apiKey = tokenBits[0];
 		String accessToken = tokenBits[1];
 
-		Optional<Member> opMember = memberService.getMemberByAccessToken(accessToken);
+		Optional<Member> opMemberByAccessToken = memberService.getMemberByAccessToken(accessToken);
 
-		if (opMember.isEmpty()) {
+		if (opMemberByAccessToken.isEmpty()) {
+			// Access Token 만료 시 재발급
+			Optional<Member> opmMemberByApiKey = memberService.findByApiKey(apiKey);
+
+			if (opmMemberByApiKey.isEmpty()) { // 잘못된 API Key
+				filterChain.doFilter(request, response);
+				return;
+			}
+
+			String newAuthToken = memberService.getAuthToken(opmMemberByApiKey.get());
+			response.addHeader("Authorization", "Bearer " + newAuthToken); // 응답에 새로운 Token 추가
+
+			Member actor = opmMemberByApiKey.get();
+			rq.setLogin(actor);
+
 			filterChain.doFilter(request, response);
 			return;
 		}
 
-		Member actor = opMember.get();
+		Member actor = opMemberByAccessToken.get();
 		rq.setLogin(actor); // user1이 로그인했다고 security에게 알려주면 security는 user1로 인식
 
 		filterChain.doFilter(request, response); // 다음 필터, 없다면 컨트롤러 등으로 넘어간다

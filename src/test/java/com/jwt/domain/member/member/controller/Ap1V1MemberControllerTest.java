@@ -271,5 +271,21 @@ class Ap1V1MemberControllerTest {
 				.andDo(print());
 			return resultActions;
 		}
+
+		@Test
+		@DisplayName("성공 - 만료된 액세스 토큰으로 내 정보를 조회할 수 있다")
+		void meC() throws Exception {
+			String apiKey = loginMember.getApiKey();
+			String expiredToken = apiKey + " eyJhbGciOiJIUzUxMiJ9.eyJpZCI6MywidXNlcm5hbWUiOiJ1c2VyMSIsImlhdCI6MTczOTI0MDc0OSwiZXhwIjoxNzM5MjQwNzU0fQ.3NimuNYStViWCejkUoP-TsLKDapoxoydxDRGHE0Wc_GlgBADUO75AJTHS7FLJ3WmC9IHZa1lUOn-B7SI1Bok5g";
+
+			ResultActions resultActions = meRequest(expiredToken); // io.jsonwebtoken.ExpiredJwtException: JWT expired
+
+			resultActions
+				.andExpect(status().isOk())
+				.andExpect(handler().handlerType(ApiV1MemberController.class))
+				.andExpect(handler().methodName("me"))
+				.andExpect(jsonPath("$.code").value("200-1"))
+				.andExpect(jsonPath("$.msg").value("내 정보 조회가 완료되었습니다."));
+		}
 	}
 }

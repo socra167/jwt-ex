@@ -39,4 +39,4 @@ logging:
 custom:
   jwt:
     secret-key: abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz1234567890
-    expire-seconds: "#{60 * 60 * 24 * 365}" # 계산된 결과값 매핑
+    expire-seconds: "#{5}" # 테스트를 위해 5초로 설정

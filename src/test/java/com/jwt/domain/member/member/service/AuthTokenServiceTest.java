@@ -52,7 +52,7 @@ public class AuthTokenServiceTest {
 	}
 
 	@Test
-	@DisplayName("Access Token 생성")
+	@DisplayName("user1의 Access Token 생성")
 	void accessToken() {
 		// Access Token이라고 불리는 JWT (뭔가를 접근하기 위한 토큰, 인증 정보를 담고 있는 토큰)
 		Member member = memberService.findByUsername("user1").get();
