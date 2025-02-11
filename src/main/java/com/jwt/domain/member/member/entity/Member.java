@@ -1,6 +1,12 @@
 package com.jwt.domain.member.member.entity;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.jwt.global.entity.BaseTime;
 
@@ -33,5 +39,23 @@ public class Member extends BaseTime {
 
     public boolean isAdmin() {
         return username.equals("admin");
+    }
+
+    public Collection<? extends GrantedAuthority> getAutorities() {
+        // new SimpleGrantedAuthority("ROLE_USER"); 원래는 이런 형식인데, 우리는 STRING으로 관리하고 최종적으로 줄 떄만 이렇게 처리해서 주도록 해보자
+        return getMemberAuthoritiesAsString()
+            .stream()
+            .map(SimpleGrantedAuthority::new) // Security에서 사용하는 형식으로
+            .toList();
+    }
+
+    public List<String> getMemberAuthoritiesAsString() {
+        List<String> authorities = new ArrayList<>();
+
+        if (isAdmin()) {
+            authorities.add("ADMIN_ACT");
+        }
+
+        return authorities;
     }
 }

@@ -1,7 +1,5 @@
 package com.jwt.global.security;
 
-import java.util.List;
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,6 +21,6 @@ public class CustomUserDetailService implements UserDetailsService { // 스프�
 		Member member = memberRepository.findByUsername(username)
 			.orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
-		return new SecurityUser(member.getId(), member.getUsername(), member.getPassword(), List.of()); // 아직 권한을 만들지 않아 빈 리스트
+		return new SecurityUser(member.getId(), member.getUsername(), member.getPassword(), member.getAutorities());
 	}
 }
