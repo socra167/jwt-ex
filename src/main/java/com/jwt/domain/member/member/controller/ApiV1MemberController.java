@@ -10,9 +10,12 @@ import com.jwt.domain.member.member.dto.MemberDto;
 import com.jwt.domain.member.member.entity.Member;
 import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.global.Rq;
+import com.jwt.global.aspect.ResponseAspect;
 import com.jwt.global.dto.RsData;
 import com.jwt.global.exception.ServiceException;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ public class ApiV1MemberController {
 
 	private final MemberService memberService;
 	private final Rq rq;
+	private final ResponseAspect responseAspect;
 
 	record JoinReqBody(@NotBlank String username, @NotBlank String password, @NotBlank String nickname) {
 	}
@@ -50,13 +54,17 @@ public class ApiV1MemberController {
 	}
 
 	@PostMapping("/login")
-	public RsData<LoginResBody> login(@RequestBody @Valid LoginReqBody body) {
+	public RsData<LoginResBody> login(@RequestBody @Valid LoginReqBody body, HttpServletResponse response) {
 		Member member = memberService.findByUsername(body.username())
 			.orElseThrow(() -> new ServiceException("401-1", "잘못된 아이디입니다."));
 
 		if (!member.getPassword().equals(body.password())) {
 			throw new ServiceException("401-2", "비밀번호가 일치하지 않습니다.");
 		}
+
+		String accessToken = memberService.getAuthToken(member);
+		Cookie accessTokenCookie = new Cookie("accessToken", accessToken); // 응답 헤더에 추가할 쿠키
+		response.addCookie(accessTokenCookie); // 응답에 쿠키를 추가
 
 		// authTokenService.genAccessToken(member);
 		// 이렇게 사용하지 않고, MemberService에서 사용하도록 하고 싶다.
