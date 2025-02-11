@@ -48,7 +48,7 @@ public class MemberService {
 	public String getAuthToken(Member member) {
 		// 인증을 위한 토큰은 액세스 토큰으로 쓰다가, API key로 바꿀 수도 있다.
 		// 인증 방식이 바뀌어도 유연하게 사용 가능하도록 추상적인 메서드명으로 설정
-		return authTokenService.genAccessToken(member);
+		return member.getApiKey() + " " + authTokenService.genAccessToken(member);
 	}
 
 	public Optional<Member> getMemberByAccessToken(String token) {
