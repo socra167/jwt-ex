@@ -285,5 +285,21 @@ class Ap1V1MemberControllerTest {
 				.andExpect(jsonPath("$.code").value("200-1"))
 				.andExpect(jsonPath("$.msg").value("내 정보 조회가 완료되었습니다."));
 		}
+
+		@Test
+		@DisplayName("성공 - 잘못된 액세스 토큰으로 내 정보 조회")
+		void meD() throws Exception {
+			var apiKey = loginMember.getApiKey();
+			var wrongToken = apiKey + " 123";
+
+			ResultActions resultActions = meRequest(wrongToken); // io.jsonwebtoken.MalformedJwtException: Invalid compact JWT string
+
+			resultActions
+				.andExpect(status().isOk())
+				.andExpect(handler().handlerType(ApiV1MemberController.class))
+				.andExpect(handler().methodName("me"))
+				.andExpect(jsonPath("$.code").value("200-1"))
+				.andExpect(jsonPath("$.msg").value("내 정보 조회가 완료되었습니다."));
+		}
 	}
 }
