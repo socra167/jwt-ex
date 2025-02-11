@@ -71,4 +71,8 @@ public class MemberService {
 				.username(username)
 				.build());
 	}
+
+	public String genAccessToken(Member member) {
+		return authTokenService.genAccessToken(member);
+	}
 }

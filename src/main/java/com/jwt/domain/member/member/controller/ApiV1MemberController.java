@@ -62,7 +62,7 @@ public class ApiV1MemberController {
 			throw new ServiceException("401-2", "비밀번호가 일치하지 않습니다.");
 		}
 
-		String accessToken = memberService.getAuthToken(member);
+		String accessToken = memberService.genAccessToken(member);
 		Cookie accessTokenCookie = new Cookie("accessToken", accessToken); // 응답 헤더에 추가할 쿠키
 		accessTokenCookie.setDomain("localhost"); // 쿠키가 사용될 수 있는 도메인
 		accessTokenCookie.setPath("/"); // 쿠키가 사이트에서 사용될 수 있는 엔드포인트
