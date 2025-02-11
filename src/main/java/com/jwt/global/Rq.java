@@ -14,7 +14,9 @@ import com.jwt.domain.member.member.service.MemberService;
 import com.jwt.global.exception.ServiceException;
 import com.jwt.global.security.SecurityUser;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 // Request, Response, Session, Cookie, Header
@@ -24,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class Rq {
 
 	private final HttpServletRequest request;
+	private final HttpServletResponse response;
 	private final MemberService memberService;
 
 	public Member getAuthenticatedActor() {
@@ -63,11 +66,45 @@ public class Rq {
 			throw new ServiceException("401-3", "잘못된 인증 정보입니다.");
 		}
 
-		SecurityUser user = (SecurityUser) principal;
+		SecurityUser user = (SecurityUser)principal;
 
 		return Member.builder()
 			.id(user.getId())
 			.username(user.getUsername())
 			.build();
+	}
+
+	public String getValueFromCookie(String name) {
+		Cookie[] cookies = request.getCookies();
+
+		if (cookies == null) {
+			return null;
+		}
+
+		for (Cookie cookie : cookies) {
+			if (cookie.getName().equals(name)) {
+				return cookie.getValue();
+			}
+		}
+
+		return null;
+	}
+
+	public void setHeader(String name, String value) {
+		response.setHeader(name, value);
+	}
+
+	public void addCookie(String name, String value) {
+		Cookie cookie = new Cookie(name, value);
+		cookie.setPath("/");
+		cookie.setDomain("localhost");
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+		cookie.setAttribute("SameSite", "Strict");
+		response.addCookie(cookie);
+	}
+
+	public String getHeader(String name) {
+		return request.getHeader(name);
 	}
 }

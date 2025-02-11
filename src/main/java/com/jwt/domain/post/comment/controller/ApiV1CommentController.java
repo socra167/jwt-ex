@@ -80,7 +80,6 @@ public class ApiV1CommentController {
 		return new CommentDto(comment);
 	}
 
-
 	record WriteReqBody(String content) {
 	}
 

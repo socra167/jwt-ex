@@ -12,93 +12,99 @@ import com.jwt.global.Rq;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Component // 컴포넌트 스캔 적용
-public class CustomAuthenticationFilter extends OncePerRequestFilter { // 필터 역할을 수행하도록 OncePerRequestFilter 구현
+public class CustomAuthenticationFilter extends OncePerRequestFilter {
+	public static final String AUTHORIZATION = "Authorization";
+	public static final String ACCESS_TOKEN = "accessToken";
+	public static final String BEARER = "Bearer ";
+	public static final String API_KEY = "apiKey";
 	private final Rq rq;
 	private final MemberService memberService;
-
-	private boolean isAuthorizationHeader(HttpServletRequest request) {
-		return Optional.ofNullable(request.getHeader("Authorization"))
-			.filter(s -> s.startsWith("Bearer "))
-			.isPresent();
-	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
 		FilterChain filterChain) throws ServletException, IOException {
-		if (isAuthorizationHeader(request)) {
 
-			String authorizationHeader = request.getHeader("Authorization");
-			String authToken = authorizationHeader.substring("Bearer ".length());
+		AuthToken tokens = getAuthTokenFromRequest();
+
+		if (tokens == null) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
+		// 재발급 코드
+		Member actor = getMemberByAccessToken(tokens.accessToken(), tokens.apiKey());
+		if (actor == null) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+		rq.setLogin(actor);
+
+		filterChain.doFilter(request, response);
+	}
+
+	private boolean isAuthorizationHeader() {
+		return Optional.ofNullable(rq.getHeader(AUTHORIZATION))
+			.filter(s -> s.startsWith(BEARER))
+			.isPresent();
+	}
+
+	record AuthToken(String apiKey, String accessToken) {
+	}
+
+	private AuthToken getAuthTokenFromRequest() {
+
+		if (isAuthorizationHeader()) {
+
+			String authorizationHeader = rq.getHeader(AUTHORIZATION);
+			String authToken = authorizationHeader.substring(BEARER.length());
 
 			String[] tokenBits = authToken.split(" ", 2);
 
 			if (tokenBits.length < 2) {
-				filterChain.doFilter(request, response);
-				return;
+				return null;
 			}
 
-			String apiKey = tokenBits[0];
-			String accessToken = tokenBits[1];
-
-			Optional<Member> opAccMember = memberService.getMemberByAccessToken(accessToken);
-
-			if (opAccMember.isEmpty()) {
-
-				// 재발급
-				Optional<Member> opApiMember = memberService.findByApiKey(apiKey);
-
-				if (opApiMember.isEmpty()) {
-					filterChain.doFilter(request, response);
-					return;
-				}
-
-				String newAccessToken = memberService.genAccessToken(opApiMember.get());
-				response.addHeader("Authorization", "Bearer " + newAccessToken);
-
-				Member actor = opApiMember.get();
-				rq.setLogin(actor);
-
-				filterChain.doFilter(request, response);
-				return;
-			}
-
-			Member actor = opAccMember.get();
-			rq.setLogin(actor);
-
-			filterChain.doFilter(request, response);
-		} else {
-
-			Cookie[] cookies = request.getCookies();
-
-			if (cookies == null) {
-				filterChain.doFilter(request, response);
-				return;
-			}
-
-			for (Cookie cookie : cookies) {
-				if (cookie.getName().equals("accessToken")) {
-					String accessToken = cookie.getValue();
-
-					Optional<Member> opMember = memberService.getMemberByAccessToken(accessToken);
-
-					if (opMember.isEmpty()) {
-						filterChain.doFilter(request, response);
-						return;
-					}
-
-					Member actor = opMember.get();
-					rq.setLogin(actor);
-				}
-			}
+			return new AuthToken(tokenBits[0], tokenBits[1]);
 		}
 
-		filterChain.doFilter(request, response);
+		String accessToken = rq.getValueFromCookie(ACCESS_TOKEN);
+		String apiKey = rq.getValueFromCookie(API_KEY);
+
+		if (accessToken == null || apiKey == null) {
+			return null;
+		}
+
+		return new AuthToken(apiKey, accessToken);
+
+	}
+
+	private Member getMemberByAccessToken(String accessToken, String apiKey) {
+
+		Optional<Member> opMemberByAccessToken = memberService.getMemberByAccessToken(accessToken);
+
+		if (opMemberByAccessToken.isEmpty()) {
+			Optional<Member> opMemberByApiKey = memberService.findByApiKey(apiKey);
+
+			if (opMemberByApiKey.isEmpty()) {
+				return null;
+			}
+
+			refreshAccessToken(opMemberByApiKey.get());
+			return opMemberByApiKey.get();
+		}
+
+		return opMemberByAccessToken.get();
+	}
+
+	private void refreshAccessToken(Member member) {
+		String newAccessToken = memberService.genAccessToken(member);
+		rq.setHeader(AUTHORIZATION, BEARER + newAccessToken);
+		rq.addCookie(ACCESS_TOKEN, newAccessToken);
 	}
 }
