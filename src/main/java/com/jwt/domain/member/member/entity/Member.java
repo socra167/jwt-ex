@@ -53,7 +53,11 @@ public class Member extends BaseTime {
         List<String> authorities = new ArrayList<>();
 
         if (isAdmin()) {
-            authorities.add("ADMIN_ACT");
+            authorities.add("ROLE_ADMIN");
+            // ROLE_을 붙여서, 접두어로 Security가 처리할 수 있는 부분이 있다. ADMIN 역할을 한다는 뜻
+            // 기존 ADMIN_ACT 를 사용했을 때에서 바뀐 설정
+            // hasAuthority("ADMIN_ACT") -> hasRole("ADMIN"): config에서 hasRole()로 설정할 수 있다.
+            // 접두어 ROLE_ 은 없애서 적용해야 한다.
         }
 
         return authorities;
