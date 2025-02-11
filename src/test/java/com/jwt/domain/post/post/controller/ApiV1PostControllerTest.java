@@ -42,7 +42,6 @@ class ApiV1PostControllerTest {
 	private MemberService memberService;
 
 	private Member loginMember;
-
 	private String token;
 
 	@BeforeEach
@@ -473,7 +472,7 @@ class ApiV1PostControllerTest {
 		@WithUserDetails("admin")
 		@DisplayName("성공 - 관리자는 통계 페이지에 접근할 수 있다")
 		void statisticsA() throws Exception {
-			ResultActions resultActions = mvc.perform(
+			var resultActions = mvc.perform(
 					get("/api/v1/posts/statistics")
 				)
 				.andDo(print());
@@ -493,7 +492,7 @@ class ApiV1PostControllerTest {
 		@WithUserDetails("user1")
 		@DisplayName("실패 - 사용자는 통계 페이지에 접근할 수 없어야 한다")
 		void statisticsB() throws Exception {
-			ResultActions resultActions = mvc.perform(
+			var resultActions = mvc.perform(
 					get("/api/v1/posts/statistics")
 				)
 				.andDo(print());

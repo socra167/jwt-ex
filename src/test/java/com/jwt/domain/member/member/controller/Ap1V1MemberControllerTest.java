@@ -51,10 +51,10 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("성공 - 회원 가입을 할 수 있다")
 		void joinA() throws Exception {
-			String username = "usernew";
-			String password = "1234";
-			String nickname = "무명";
-			ResultActions resultActions = joinRequest(username, password, nickname);
+			var username = "usernew";
+			var password = "1234";
+			var nickname = "무명";
+			var resultActions = joinRequest(username, password, nickname);
 
 			Member member = memberService.findByUsername(username).get();
 			assertThat(member.getNickname()).isEqualTo(nickname);
@@ -71,7 +71,7 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 이미 존재하는 아이디로 회원 가입을 하면 실패한다")
 		void joinB() throws Exception {
-			ResultActions resultActions = joinRequest("user1", "1234", "무명");
+			var resultActions = joinRequest("user1", "1234", "무명");
 
 			resultActions
 				.andExpect(status().isConflict())
@@ -84,7 +84,7 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 입력 데이터가 누락되면 회원 가입에 실패한다")
 		void joinC() throws Exception {
-			ResultActions resultActions = joinRequest("", "", "");
+			var resultActions = joinRequest("", "", "");
 
 			resultActions
 				.andExpect(status().isBadRequest())
@@ -99,7 +99,7 @@ class Ap1V1MemberControllerTest {
 		}
 
 		private ResultActions joinRequest(String username, String password, String nickname) throws Exception {
-			ResultActions resultActions = mvc
+			return mvc
 				.perform(
 					post("/api/v1/members/join")
 						.content("""
@@ -112,7 +112,6 @@ class Ap1V1MemberControllerTest {
 						.contentType(new MediaType(MediaType.APPLICATION_JSON, StandardCharsets.UTF_8))
 				)
 				.andDo(print());
-			return resultActions;
 		}
 	}
 
@@ -132,9 +131,9 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("성공 - 로그인을 할 수 있다")
 		void loginA() throws Exception {
-			String username = "user1";
-			String password = "user11234";
-			ResultActions resultActions = loginRequest(username, password);
+			var username = "user1";
+			var password = "user11234";
+			var resultActions = loginRequest(username, password);
 
 			Member member = memberService.findByUsername("user1").get();
 			resultActions
@@ -155,9 +154,9 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 비밀번호가 틀리면 로그인에 실패한다")
 		void loginB_wrongPassword() throws Exception {
-			String username = "user1";
-			String password = "1234";
-			ResultActions resultActions = loginRequest(username, password);
+			var username = "user1";
+			var password = "1234";
+			var resultActions = loginRequest(username, password);
 
 			resultActions
 				.andExpect(status().isUnauthorized()) // 401 UNAUTHORIZED
@@ -170,9 +169,9 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 존재하지 않는 아이디면 로그인에 실패한다")
 		void loginC_wrongUsername() throws Exception {
-			String username = "nonexistent";
-			String password = "1234";
-			ResultActions resultActions = loginRequest(username, password);
+			var username = "nonexistent";
+			var password = "1234";
+			var resultActions = loginRequest(username, password);
 
 			resultActions
 				.andExpect(status().isUnauthorized()) // 401 UNAUTHORIZED
@@ -185,9 +184,9 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 아이디가 비어 있으면 로그인에 실패한다")
 		void loginD_emptyUsername() throws Exception {
-			String username = "";
-			String password = "1234";
-			ResultActions resultActions = loginRequest(username, password);
+			var username = "";
+			var password = "1234";
+			var resultActions = loginRequest(username, password);
 
 			resultActions
 				.andExpect(status().isBadRequest()) // 400 BAD REQUEST
@@ -200,9 +199,9 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 비밀번호가 비어 있으면 로그인에 실패한다")
 		void loginD_emptyPassword() throws Exception {
-			String username = "user1";
-			String password = "";
-			ResultActions resultActions = loginRequest(username, password);
+			var username = "user1";
+			var password = "";
+			var resultActions = loginRequest(username, password);
 
 			resultActions
 				.andExpect(status().isBadRequest()) // 400 BAD REQUEST
@@ -237,7 +236,7 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("성공 - 내 정보를 조회할 수 있다")
 		void meA() throws Exception {
-			ResultActions resultActions = meRequest(token);
+			var resultActions = meRequest(token);
 
 			// Member member = memberService.findByApiKey(token).get();
 
@@ -253,8 +252,8 @@ class Ap1V1MemberControllerTest {
 		@Test
 		@DisplayName("실패 - 잘못된 API key로 내 정보 조회를 하면 실패한다")
 		void meB() throws Exception {
-			String wrong_token = "";
-			ResultActions resultActions = meRequest(wrong_token);
+			var wrongToken = "";
+			var resultActions = meRequest(wrongToken);
 
 			resultActions
 				.andExpect(status().isUnauthorized())
@@ -263,20 +262,19 @@ class Ap1V1MemberControllerTest {
 		}
 
 		private ResultActions meRequest(String token) throws Exception {
-			ResultActions resultActions = mvc
+			return mvc
 				.perform(
 					get("/api/v1/members/me")
 						.header("Authorization", "Bearer %s".formatted(token))
 				)
 				.andDo(print());
-			return resultActions;
 		}
 
 		@Test
 		@DisplayName("성공 - 만료된 액세스 토큰으로 내 정보를 조회할 수 있다")
 		void meC() throws Exception {
-			String apiKey = loginMember.getApiKey();
-			String expiredToken = apiKey + " eyJhbGciOiJIUzUxMiJ9.eyJpZCI6MywidXNlcm5hbWUiOiJ1c2VyMSIsImlhdCI6MTczOTI0MDc0OSwiZXhwIjoxNzM5MjQwNzU0fQ.3NimuNYStViWCejkUoP-TsLKDapoxoydxDRGHE0Wc_GlgBADUO75AJTHS7FLJ3WmC9IHZa1lUOn-B7SI1Bok5g";
+			var apiKey = loginMember.getApiKey();
+			var expiredToken = apiKey + " eyJhbGciOiJIUzUxMiJ9.eyJpZCI6MywidXNlcm5hbWUiOiJ1c2VyMSIsImlhdCI6MTczOTI0MDc0OSwiZXhwIjoxNzM5MjQwNzU0fQ.3NimuNYStViWCejkUoP-TsLKDapoxoydxDRGHE0Wc_GlgBADUO75AJTHS7FLJ3WmC9IHZa1lUOn-B7SI1Bok5g";
 
 			ResultActions resultActions = meRequest(expiredToken); // io.jsonwebtoken.ExpiredJwtException: JWT expired
 
