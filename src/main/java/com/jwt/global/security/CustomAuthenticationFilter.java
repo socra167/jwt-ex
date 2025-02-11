@@ -15,7 +15,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component // 컴포넌트 스캔 적용
 public class CustomAuthenticationFilter extends OncePerRequestFilter {
@@ -26,31 +28,9 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 	private final Rq rq;
 	private final MemberService memberService;
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-		FilterChain filterChain) throws ServletException, IOException {
-
-		AuthToken tokens = getAuthTokenFromRequest();
-
-		if (tokens == null) {
-			filterChain.doFilter(request, response);
-			return;
-		}
-
-		// 재발급 코드
-		Member actor = getMemberByAccessToken(tokens.accessToken(), tokens.apiKey());
-		if (actor == null) {
-			filterChain.doFilter(request, response);
-			return;
-		}
-		rq.setLogin(actor);
-
-		filterChain.doFilter(request, response);
-	}
-
 	private boolean isAuthorizationHeader() {
 		return Optional.ofNullable(rq.getHeader(AUTHORIZATION))
-			.filter(s -> s.startsWith(BEARER))
+			.filter(header -> header.startsWith(BEARER))
 			.isPresent();
 	}
 
@@ -88,23 +68,45 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
 		Optional<Member> opMemberByAccessToken = memberService.getMemberByAccessToken(accessToken);
 
-		if (opMemberByAccessToken.isEmpty()) {
-			Optional<Member> opMemberByApiKey = memberService.findByApiKey(apiKey);
-
-			if (opMemberByApiKey.isEmpty()) {
-				return null;
-			}
-
-			refreshAccessToken(opMemberByApiKey.get());
-			return opMemberByApiKey.get();
+		if (opMemberByAccessToken.isPresent()) {
+			return opMemberByAccessToken.get();
 		}
 
-		return opMemberByAccessToken.get();
+		Optional<Member> opMemberByApiKey = memberService.findByApiKey(apiKey);
+
+		if (opMemberByApiKey.isEmpty()) {
+			return null;
+		}
+
+		String newAccessToken = memberService.genAccessToken(opMemberByApiKey.get());
+		rq.addCookie(ACCESS_TOKEN, newAccessToken);
+		rq.addCookie(API_KEY, apiKey);
+
+		return opMemberByApiKey.get();
 	}
 
-	private void refreshAccessToken(Member member) {
-		String newAccessToken = memberService.genAccessToken(member);
-		rq.setHeader(AUTHORIZATION, BEARER + newAccessToken);
-		rq.addCookie(ACCESS_TOKEN, newAccessToken);
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+		FilterChain filterChain) throws ServletException, IOException {
+
+		AuthToken tokens = getAuthTokenFromRequest();
+
+		if (tokens == null) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
+		String apiKey = tokens.apiKey();
+		String accessToken = tokens.accessToken();
+
+		Member actor = getMemberByAccessToken(accessToken, apiKey);
+
+		if (actor == null) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
+		rq.setLogin(actor);
+		filterChain.doFilter(request, response);
 	}
 }
