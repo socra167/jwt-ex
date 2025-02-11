@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -464,19 +465,45 @@ class ApiV1PostControllerTest {
 		}
 	}
 
-	@Test
+	@Nested
 	@DisplayName("통계")
-	void statistics() throws Exception {
-		ResultActions resultActions = mvc.perform(
-				get("/api/v1/posts/statistics")
-			)
-			.andDo(print());
+	class statistics {
 
-		resultActions
-			.andExpect(status().isOk())
-			.andExpect(handler().handlerType(ApiV1PostController.class))
-			.andExpect(handler().methodName("getStatistics"))
-			.andExpect(jsonPath("$.code").value("200-1"))
-			.andExpect(jsonPath("$.msg").value("통계 조회가 완료되었습니다."));
+		@Test
+		@WithUserDetails("admin")
+		@DisplayName("성공 - 관리자는 통계 페이지에 접근할 수 있다")
+		void statisticsA() throws Exception {
+			ResultActions resultActions = mvc.perform(
+					get("/api/v1/posts/statistics")
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(status().isOk())
+				.andExpect(handler().handlerType(ApiV1PostController.class))
+				.andExpect(handler().methodName("getStatistics"))
+				.andExpect(jsonPath("$.code").value("200-1"))
+				.andExpect(jsonPath("$.msg").value("통계 조회가 완료되었습니다."))
+				.andExpect(jsonPath("$.data.postCount").value(10))
+				.andExpect(jsonPath("$.data.postPublishedCount").value(10))
+				.andExpect(jsonPath("$.data.postListedCount").value(10));
+		}
+
+		@Test
+		@WithUserDetails("user1")
+		@DisplayName("실패 - 사용자는 통계 페이지에 접근할 수 없어야 한다")
+		void statisticsB() throws Exception {
+			ResultActions resultActions = mvc.perform(
+					get("/api/v1/posts/statistics")
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(status().isForbidden())
+				.andExpect(handler().handlerType(ApiV1PostController.class))
+				.andExpect(handler().methodName("getStatistics"))
+				.andExpect(jsonPath("$.code").value("403-1"))
+				.andExpect(jsonPath("$.msg").value("접근 권한이 없습니다."));
+		}
 	}
 }
