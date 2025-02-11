@@ -12,6 +12,7 @@ import com.jwt.global.Rq;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,54 +23,90 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter { // 필터
 	private final Rq rq;
 	private final MemberService memberService;
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+	private boolean isAuthorizationHeader(HttpServletRequest request) {
 		String authorizationHeader = request.getHeader("Authorization");
 
 		if (authorizationHeader == null) {
-			filterChain.doFilter(request, response); // 헤더에 인증 정보가 없다면, 다른 동작을 하지 않고 Security가 알아서 처리하도록 Pass
-			return; // doFilter()를 하더라도 return을 해야 종료된다.
+			return false;
 		}
+
 		if (!authorizationHeader.startsWith("Bearer ")) {
-			filterChain.doFilter(request, response);
-			return;
+			return false;
 		}
 
-		String authToken = authorizationHeader.substring("Bearer ".length());
-		String[] tokenBits = authToken.split(" ", 2);
+		return true;
+	}
 
-		if (tokenBits.length < 2) {
-			filterChain.doFilter(request, response);
-			return;
-		}
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+		FilterChain filterChain) throws ServletException, IOException {
+		if (isAuthorizationHeader(request)) {
 
-		String apiKey = tokenBits[0];
-		String accessToken = tokenBits[1];
+			String authorizationHeader = request.getHeader("Authorization");
+			String authToken = authorizationHeader.substring("Bearer ".length());
 
-		Optional<Member> opMemberByAccessToken = memberService.getMemberByAccessToken(accessToken);
+			String[] tokenBits = authToken.split(" ", 2);
 
-		if (opMemberByAccessToken.isEmpty()) {
-			// Access Token 만료 시 재발급
-			Optional<Member> opmMemberByApiKey = memberService.findByApiKey(apiKey);
-
-			if (opmMemberByApiKey.isEmpty()) { // 잘못된 API Key
+			if (tokenBits.length < 2) {
 				filterChain.doFilter(request, response);
 				return;
 			}
 
-			String newAuthToken = memberService.getAuthToken(opmMemberByApiKey.get());
-			response.addHeader("Authorization", "Bearer " + newAuthToken); // 응답에 새로운 Token 추가
+			String apiKey = tokenBits[0];
+			String accessToken = tokenBits[1];
 
-			Member actor = opmMemberByApiKey.get();
+			Optional<Member> opAccMember = memberService.getMemberByAccessToken(accessToken);
+
+			if (opAccMember.isEmpty()) {
+
+				// 재발급
+				Optional<Member> opApiMember = memberService.findByApiKey(apiKey);
+
+				if (opApiMember.isEmpty()) {
+					filterChain.doFilter(request, response);
+					return;
+				}
+
+				String newAccessToken = memberService.genAccessToken(opApiMember.get());
+				response.addHeader("Authorization", "Bearer " + newAccessToken);
+
+				Member actor = opApiMember.get();
+				rq.setLogin(actor);
+
+				filterChain.doFilter(request, response);
+				return;
+			}
+
+			Member actor = opAccMember.get();
 			rq.setLogin(actor);
 
 			filterChain.doFilter(request, response);
-			return;
+		} else {
+
+			Cookie[] cookies = request.getCookies();
+
+			if (cookies == null) {
+				filterChain.doFilter(request, response);
+				return;
+			}
+
+			for (Cookie cookie : cookies) {
+				if (cookie.getName().equals("accessToken")) {
+					String accessToken = cookie.getValue();
+
+					Optional<Member> opMember = memberService.getMemberByAccessToken(accessToken);
+
+					if (opMember.isEmpty()) {
+						filterChain.doFilter(request, response);
+						return;
+					}
+
+					Member actor = opMember.get();
+					rq.setLogin(actor);
+				}
+			}
 		}
 
-		Member actor = opMemberByAccessToken.get();
-		rq.setLogin(actor); // user1이 로그인했다고 security에게 알려주면 security는 user1로 인식
-
-		filterChain.doFilter(request, response); // 다음 필터, 없다면 컨트롤러 등으로 넘어간다
+		filterChain.doFilter(request, response);
 	}
 }
