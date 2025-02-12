@@ -107,4 +107,8 @@ public class Rq {
 	public String getHeader(String name) {
 		return request.getHeader(name);
 	}
+
+	public Member getRealActor(Member actor) {
+		return memberService.findById(actor.getId()).get();
+	}
 }

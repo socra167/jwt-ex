@@ -73,8 +73,9 @@ public class ApiV1PostController {
 	@Transactional
 	public RsData<PostWithContnetDto> write(@RequestBody @Valid WriteReqBody body) {
 		Member actor = rq.getActor();
+		Member realActor = rq.getRealActor(actor);
 
-		Post post = postService.write(actor, body.title(), body.content(), body.published(), body.listed());
+		Post post = postService.write(realActor, body.title(), body.content(), body.published(), body.listed());
 
 		return new RsData<>(
 			"201-1",
