@@ -96,8 +96,8 @@ public class Rq {
 
 	public void addCookie(String name, String value) {
 		Cookie cookie = new Cookie(name, value);
-		cookie.setPath("/");
 		cookie.setDomain("localhost");
+		cookie.setPath("/");
 		cookie.setHttpOnly(true);
 		cookie.setSecure(true);
 		cookie.setAttribute("SameSite", "Strict");
@@ -110,5 +110,17 @@ public class Rq {
 
 	public Member getRealActor(Member actor) {
 		return memberService.findById(actor.getId()).get();
+	}
+
+	public void removeCookie(String name) {
+		// 원칙적으로 쿠키를 서버에서 삭제하는 것은 불가능하다.
+		Cookie cookie = new Cookie(name, null);
+		cookie.setDomain("localhost");
+		cookie.setPath("/");
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+		cookie.setAttribute("SameSite", "Strict");
+		cookie.setMaxAge(0); // 쿠키의 최대 유효 기간
+		response.addCookie(cookie);
 	}
 }

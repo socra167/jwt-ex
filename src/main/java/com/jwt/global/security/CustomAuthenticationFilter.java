@@ -92,7 +92,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
 		// 인증이 불필요한 endpoint 필터 처리 통과
 		String url = request.getRequestURI();
-		if (List.of("api/v1/members/login", "api/v1/members/join").contains(url)) {
+		if (List.of("api/v1/members/login", "api/v1/members/join", "api/v1/members/logout").contains(url)) {
 			filterChain.doFilter(request, response);
 			return;
 		}

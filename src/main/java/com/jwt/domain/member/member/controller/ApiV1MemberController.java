@@ -1,5 +1,6 @@
 package com.jwt.domain.member.member.controller;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -79,6 +80,17 @@ public class ApiV1MemberController {
 				member.getApiKey(),
 				authToken
 			)
+		);
+	}
+
+	@DeleteMapping("/logout")
+	public RsData<String> logout() {
+		rq.removeCookie("accessToken");
+		rq.removeCookie("apiKey");
+
+		return new RsData<>(
+			"200-1",
+			"로그아웃되었습니다."
 		);
 	}
 
