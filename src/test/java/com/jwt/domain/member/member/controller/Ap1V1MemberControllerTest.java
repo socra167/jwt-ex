@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jwt.domain.member.member.entity.Member;
 import com.jwt.domain.member.member.service.MemberService;
 
+import jakarta.servlet.http.Cookie;
+
 @Transactional
 @SpringBootTest
 @ActiveProfiles("test")
@@ -135,6 +137,7 @@ class Ap1V1MemberControllerTest {
 			var password = "user11234";
 			var resultActions = loginRequest(username, password);
 
+			// 로그인 성공 시 응답 검증
 			Member member = memberService.findByUsername("user1").get();
 			resultActions
 				.andExpect(status().isOk())
@@ -149,6 +152,28 @@ class Ap1V1MemberControllerTest {
 				.andExpect(jsonPath("$.data.item.modifiedDate").value(matchesPattern(member.getCreatedDate().toString().replaceAll("0+$", "") + ".*")))
 				.andExpect(jsonPath("$.data.apiKey").value(member.getApiKey()))
 				.andExpect(jsonPath("$.data.accessToken").exists());
+
+			// 로그인 성공 시 설정되는 쿠키 검증
+			resultActions
+				.andExpect(mvcResult -> {
+					Cookie cookie = mvcResult.getResponse().getCookie("apiKey");
+					assertThat(cookie).isNotNull();
+					assertThat(cookie.getName()).isEqualTo("apiKey");
+					assertThat(cookie.getValue()).isNotBlank();
+					assertThat(cookie.getDomain()).isEqualTo("localhost");
+					assertThat(cookie.getPath()).isEqualTo("/");
+					assertThat(cookie.isHttpOnly()).isTrue();
+					assertThat(cookie.getSecure()).isTrue();
+
+					Cookie accessToken = mvcResult.getResponse().getCookie("accessToken");
+					assertThat(accessToken).isNotNull();
+					assertThat(accessToken.getName()).isEqualTo("accessToken");
+					assertThat(accessToken.getValue()).isNotBlank();
+					assertThat(accessToken.getDomain()).isEqualTo("localhost");
+					assertThat(accessToken.getPath()).isEqualTo("/");
+					assertThat(accessToken.isHttpOnly()).isTrue();
+					assertThat(accessToken.getSecure()).isTrue();
+				});
 		}
 
 		@Test
@@ -298,6 +323,39 @@ class Ap1V1MemberControllerTest {
 				.andExpect(handler().methodName("me"))
 				.andExpect(jsonPath("$.code").value("200-1"))
 				.andExpect(jsonPath("$.msg").value("내 정보 조회가 완료되었습니다."));
+		}
+	}
+
+	@Nested
+	@DisplayName("로그아웃")
+	class logout {
+
+		@Test
+		@DisplayName("성공 - 로그아웃할 수 있다")
+		void logout() throws Exception {
+			var resultActions = mvc.perform(
+				delete("/api/v1/members/logout")
+			);
+
+			resultActions
+				.andExpect(status().isOk())
+				.andExpect(handler().handlerType(ApiV1MemberController.class))
+				.andExpect(handler().methodName("logout"))
+				.andExpect(jsonPath("$.code").value("200-1"))
+				.andExpect(jsonPath("$.msg").value("로그아웃 되었습니다."));
+
+			resultActions
+				.andExpect(
+					mvcResult -> {
+						Cookie apiKey = mvcResult.getResponse().getCookie("apiKey");
+						assertThat(apiKey).isNotNull();
+						assertThat(apiKey.getMaxAge()).isZero();
+
+						Cookie accessToken = mvcResult.getResponse().getCookie("accessToken");
+						assertThat(accessToken).isNotNull();
+						assertThat(accessToken.getMaxAge()).isZero();
+					}
+				);
 		}
 	}
 }

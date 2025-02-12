@@ -90,7 +90,7 @@ public class ApiV1MemberController {
 
 		return new RsData<>(
 			"200-1",
-			"로그아웃되었습니다."
+			"로그아웃 되었습니다."
 		);
 	}
 
